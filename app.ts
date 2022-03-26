@@ -52,9 +52,11 @@ const isInObject = (obj: object, prop: string) => {
   return obj.hasOwnProperty(prop)
 };
 
-const JSONFieldMap = (origin: any[] | {[prop: string]: any}, models: Models, options?: Options) => {
+const JSONFieldMap = (origin: any[] | { [prop: string]: any }, models: Models, options?: Options) => {
 
   options = mergeOptions(options);
+
+  const { defaultValue, restValue } = options
 
   if (models.type === 'object') {
     const target = {};
@@ -71,25 +73,25 @@ const JSONFieldMap = (origin: any[] | {[prop: string]: any}, models: Models, opt
         case 'number':
         case 'boolean':
         case 'null':
-          /** 源数据字段是否存在 */
-          target[prop] = isInObject(origin, model.field)
+          /** 源数据字段存在 并且 源数据类型和期望类型一致 */
+          target[prop] = (isInObject(origin, model.field) && type(origin[model.field]) === model.type)
             ? origin[model.field]
-            /** 不存在取默认值 或者 返回 预设的默认值 */
-            : (isInObject(model, 'default') ? model.default : options.defaultValue[model.type]);
+            /** 不存在 或者 类型不一致取默认值 或者 返回 预设的默认值 */
+            : (isInObject(model, 'default') ? model.default : defaultValue[model.type]);
           break;
         case 'object':
           /** model 不存在表示只是想取别名 */
           if (!model.model) {
-            /** 源数据对象字段存在且是对象直接返回 */
+            /** 源数据对象字段存在 并且 是对象直接 */
             return target[prop] =
               (isInObject(origin, field) && type(origin[field]) === 'object')
-                ? deepClone(origin[(model as Model).field])
+                ? deepClone(origin[field])
                 : (
                   /** 否则 返回默认值 */
-                  isInObject(model, 'default') ? model.default : options.defaultValue.object
+                  isInObject(model, 'default') ? model.default : defaultValue.object
                 )
           }
-          /** model 存在 但是源数据对象不存在 或者不是一个对象 */
+          /** model 存在 但是源数据对象不存在 或者 不是一个对象 */
           if (type(origin[field]) !== 'object') {
             /** 存在默认值就取默认值 */
             return target[prop] = isInObject(model, 'default')
@@ -108,42 +110,33 @@ const JSONFieldMap = (origin: any[] | {[prop: string]: any}, models: Models, opt
                 ? deepClone(origin[field])
                 : (
                   /** 否则 返回默认值 */
-                  isInObject(model, 'default') ? model.default : options.defaultValue.array
+                  isInObject(model, 'default') ? model.default : defaultValue.array
                 )
           }
           /** model 存在 但是源数据字段数组不存在 或者不是一个数组 */
-          if (type(origin[(model as Model).field]) !== 'array') {
+          if (type(origin[field]) !== 'array') {
             /** 存在默认值就取默认值 */
             return target[prop] = isInObject(model, 'default')
               ? model.default
               /** 不存在取预设的默认值 */
-              : options.defaultValue.array
+              : defaultValue.array
           }
           target[prop] = JSONFieldMap(origin[field], model as Models, options)
           break;
       }
     })
-    return {...(options.restValue ? origin : {}), ...target};
-  } else {
-    const array = [];
-    origin.forEach(originItem => {
-      /** 数组下还是数组 */
-      if (type(originItem) === 'array') {
-        array.push(
-          JSONFieldMap(originItem, {
-            type: 'array',
-            model: models.model.model
-          }, options)
-        )
-      } else {
-        array.push(JSONFieldMap(originItem, {
-          type: 'object',
-          model: models.model
-        }, options))
-      }
-    })
-    return array
+    return {...(restValue ? origin : {}), ...target};
   }
+  const array = [];
+  origin.forEach(originItem => {
+    /** 判断子项是否还是数组 */
+    const isArray = type(originItem) === 'array'
+    array.push(JSONFieldMap(originItem, {
+      type: isArray ? 'array' : 'object',
+      model: isArray ? models.model.model : models.model
+    }, options))
+  })
+  return array
 };
 
 
@@ -156,7 +149,13 @@ const data = [
             [
               {
                 list_list_a: 'a',
-                list_list_b: 'b'
+                list_list_b: 'b',
+                list_list_c: {
+                  a: '1',
+                  b: 2,
+                  c: true,
+                  e: ['e', 'f']
+                }
               }
             ]
           ]
@@ -181,8 +180,30 @@ const a = JSONFieldMap(data, {
             model: {
               type: 'array',
               model: {
-                list_list_a_a: 'list_list_a',
+                list_list_a_a: {
+                  type: 'null',
+                  field: 'list_list_a'
+                },
                 list_list_b_b: 'list_list_b',
+                list_list_c_c: {
+                  field: 'list_list_c',
+                  type: 'object',
+                  model: {
+                    a: {
+                      type: 'number',
+                      field: 'a'
+                    },
+                    b: 'b',
+                    c: 'c',
+                    d: {
+                      type: 'array',
+                      field: 'e',
+                      model: {
+                        a: 'a'
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -191,7 +212,7 @@ const a = JSONFieldMap(data, {
     }
   }
 }, {
-  restValue: true,
+  restValue: false,
   defaultValue: {
     // boolean: 1,
     // null: 'null',
