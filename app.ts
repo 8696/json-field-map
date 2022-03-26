@@ -1,7 +1,7 @@
-type JSON_TYPE = 'string' | 'number' | 'boolean' | 'null' | 'array' | 'object'
+type JSON_Type = 'string' | 'number' | 'boolean' | 'null' | 'array' | 'object'
 
 type Model = {
-  type: JSON_TYPE
+  type: JSON_Type
   field: string
   model?: Models
   default?: any
@@ -13,7 +13,7 @@ type Models = {
   model?: Models
 }
 
-const type = (obj: any): JSON_TYPE => {
+const type = (obj: any): JSON_Type => {
   return Object.prototype.toString.call(obj).slice(8, -1).toLowerCase()
 };
 
@@ -27,7 +27,7 @@ const deepClone = (obj: any) => {
 type Options = {
   /** 默认值 */
   defaultValue?: {
-    [key in JSON_TYPE]?: any;
+    [key in JSON_Type]?: any;
   }
   /** 接收对象剩余值 */
   restValue?: boolean
