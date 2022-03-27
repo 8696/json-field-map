@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2021",
-    "sourceMap": true
+    "module": "UMD",
+    "target": "es5",
+    "sourceMap": true,
+    "lib": ["DOM", "es2016"]
   },
   "exclude": [
     "node_modules"
