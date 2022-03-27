@@ -5,6 +5,8 @@ JSON转换字段映射，支持字段别名、接收对象剩余参数、默认�
 ## Type
 
 ```ts
+type JSON_Type = 'string' | 'number' | 'boolean' | 'null' | 'array' | 'object'
+
 /** 映射模型 */
 type Model = {
   [prop: string]: string | Model | {
@@ -20,6 +22,7 @@ type Model = {
   type?: 'array' | 'object',
   model?: Model
 }
+
 /** 可选项 */
 type Options = {
   /** 默认值 */

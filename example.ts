@@ -300,3 +300,34 @@ const result10 = JSONFieldMap(obj10, {
 console.log(result10);
 console.log(obj10)
 console.log(JSON.stringify(result10, null, '\t'));
+
+
+
+/*********** 补全对象 ***************/
+console.log('补全对象');
+const obj11 = {
+};
+
+const result11 = JSONFieldMap(obj11, {
+    type: 'object',
+    model: {
+      list: {
+        type: 'object',
+        field: 'list',
+        model: {
+          a: {
+            type: 'string',
+            field: 'a'
+          }
+        }
+      }
+    }
+  },
+  {
+    restValue: true,
+    removeMapField: true,
+    deepClone: true
+  })
+console.log(result11);
+console.log(obj11)
+console.log(JSON.stringify(result11, null, '\t'));
